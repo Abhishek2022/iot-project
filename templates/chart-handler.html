@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>IoT</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <canvas id="temp-canvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <canvas id="moisture-canvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--suppress JSUnresolvedLibraryURL -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+<!--suppress JSUnresolvedLibraryURL -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<!--suppress JSUnresolvedLibraryURL -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
+<script>
+    $(document).ready(function () {
+        const tempConfig = {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: "Temperature",
+                    backgroundColor: 'rgb(255, 99, 132)',
+                    borderColor: 'rgb(255, 99, 132)',
+                    data: [],
+                    fill: false,
+                }],
+            },
+            options: {
+                responsive: true,
+                title: {
+                    display: true,
+                    text: ''
+                },
+                tooltips: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                hover: {
+                    mode: 'nearest',
+                    intersect: true
+                },
+                scales: {
+                    xAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Time'
+                        }
+                    }],
+                    yAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Value'
+                        }
+                    }]
+                }
+            }
+        };
+
+		const moistureConfig = {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: "Moisture",
+                    backgroundColor: 'rgb(102, 99, 255)',
+                    borderColor: 'rgb(102, 99, 255)',
+                    data: [],
+                    fill: false,
+                }],
+            },
+            options: {
+                responsive: true,
+                title: {
+                    display: true,
+                    text: ''
+                },
+                tooltips: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                hover: {
+                    mode: 'nearest',
+                    intersect: true
+                },
+                scales: {
+                    xAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Time'
+                        }
+                    }],
+                    yAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Moisture Value'
+                        }
+                    }]
+                }
+            }
+        };
+
+        const tempContext = document.getElementById('temp-canvas').getContext('2d');
+        const moistureContext = document.getElementById('moisture-canvas').getContext('2d');
+
+		const tempChart = new Chart(tempContext, tempConfig);
+		const moistureChart = new Chart(moistureContext, moistureConfig);
+
+        const tempSource = new EventSource("/temp_handler");
+		const moistureSource = new EventSource("/moisture_handler");
+
+        tempSource.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+            if (tempConfig.data.labels.length === 20) {
+                tempConfig.data.labels.shift();
+                tempConfig.data.datasets[0].data.shift();
+            }
+            tempConfig.data.labels.push(data.time);
+            tempConfig.data.datasets[0].data.push(data.value);
+            tempChart.update();
+        }
+
+		moistureSource.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+            if (moistureConfig.data.labels.length === 20) {
+                moistureConfig.data.labels.shift();
+                moistureConfig.data.datasets[0].data.shift();
+            }
+            moistureConfig.data.labels.push(data.time);
+            moistureConfig.data.datasets[0].data.push(data.value);
+			console.log(data.value);
+            moistureChart.update();
+        }
+    });
+</script>
+</body>
+</html>
